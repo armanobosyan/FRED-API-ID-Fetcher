@@ -1,0 +1,72 @@
+id,name,parent_id
+22,Interest Rates,32991
+15,Exchange Rates,32991
+24,Monetary Data,32991
+46,Financial Indicators,32991
+23,Banking,32991
+32360,Business Lending,32991
+32145,Foreign Exchange Intervention,32991
+12,Current Population Survey (Household Survey),10
+11,Current Employment Statistics (Establishment Survey),10
+32250,ADP Employment,10
+33500,Education,10
+33001,Income Distribution,10
+32241,Job Openings and Labor Turnover (JOLTS),10
+33509,Labor Market Conditions,10
+104,Population,10
+2,Productivity & Costs,10
+33831,Minimum Wage,10
+32240,Weekly Initial Claims,10
+33731,Tax Data,10
+18,National Income & Product Accounts,32992
+5,Federal Government Debt,32992
+32251,Flow of Funds,32992
+13,U.S. Trade & International Transactions,32992
+32262,Business Cycle Expansions & Contractions,1
+33936,Business Surveys,1
+32436,Construction,1
+33940,Emissions,1
+33955,Expenditures,1
+33490,Finance Companies,1
+32216,Health Insurance,1
+97,Housing,1
+3,Industrial Production & Capacity Utilization,1
+32429,Manufacturing,1
+33959,Patents,1
+6,Retail Trade,1
+33441,Services,1
+33492,Technology,1
+33202,Transportation,1
+33203,Wholesale Trade,1
+32217,Commodities,32455
+9,Consumer Price Indexes (CPI and PCE),32455
+33913,Cryptocurrencies,32455
+4,Employment Cost Index,32455
+33717,Health Care Indexes,32455
+32261,House Price Indexes,32455
+31,Producer Price Indexes (PPI),32455
+32220,Trade Indexes,32455
+32264,Countries,32263
+32955,Geography,32263
+32265,Indicators,32263
+32956,Institutions,32263
+27281,States,3008
+32043,Census Regions,3008
+32061,BEA Regions,3008
+32849,BLS Regions,3008
+32071,Federal Reserve Districts,3008
+32233,Freddie Mac Regions,3008
+33833,"Banking and Monetary Statistics, 1914-1941",33060
+33951,"Daily Federal Funds Rate, 1928-54",33060
+33825,Data on the nominal term structure model from Kim and Wright,33060
+33891,Historical Federal Reserve Data,33060
+33061,NBER Macrohistory Database,33060
+33100,Penn World Table 7.1,33060
+33402,Penn World Table 9.0,33060
+33120,Recession Probabilities,33060
+33123,"Weekly U.S. and State Bond Prices, 1855-1865",33060
+33201,Economic Policy Uncertainty,33060
+33442,Sticky Wages and Comovement,33060
+33839,A Millennium of Macroeconomic Data for the UK,33060
+33934,"New England Textile Industry, 1815-1860",33060
+34000,"The Effects of the 1930s HOLC ""Redlining"" Maps",33060

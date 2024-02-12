@@ -1,0 +1,8 @@
+# install the following packages
+requests
+pandas
+ratelimit
+limits
+sleep_and_retry
+tqdm 
+
