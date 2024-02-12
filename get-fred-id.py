@@ -6,7 +6,7 @@ from tqdm import tqdm
 import os
 
 # Set your FRED API key here. This key is required to authenticate and make requests to the FRED API.
-FRED_KEY = '88e6be3b42147d9eb6726f79a6671453'
+FRED_KEY = 'you_key'
 
 # Directory to save fetched categories, relative to the script's current working directory.
 # This path is where the script will save the CSV files containing the fetched data.
