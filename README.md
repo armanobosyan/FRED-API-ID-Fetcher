@@ -1,33 +1,24 @@
 # FRED API ID Fetcher
 
-Downloads the complete category tree of the [Federal Reserve Economic Data
-(FRED) API](https://fred.stlouisfed.org/docs/api/fred/) and saves it as CSV.
+Two crawlers that reconstruct the catalogue of the [Federal Reserve Economic
+Data (FRED) API](https://fred.stlouisfed.org/docs/api/fred/) as CSV: the
+category tree, and the metadata of every series filed under it.
 
-FRED organises its ~800,000 time series under a tree of categories, but offers
-no endpoint that returns the tree in one call — only
-`fred/category/children`, which lists the direct children of a single
-category. This script walks that endpoint breadth first until the whole tree
-has been visited: about **5,200 requests**, roughly **90 minutes** at the
-default pace of 60 requests per minute, or **45** at `--rate 120`, the most
-FRED allows.
+FRED used to publish CSV files listing its series and their descriptions and
+stopped doing so in 2020. What remains is an API with no endpoint that returns
+the category tree, and none that lists the series either — `category/children`
+gives you the children of one category, `category/series` the series of one
+category, and that is all. Getting the whole picture means walking the API,
+which is what these scripts do.
 
-The result is the `id`, `name` and `parent_id` of every FRED category, which is
-what you need to:
+| Script | Fetches | Requests | Time |
+| --- | --- | --- | --- |
+| `get-fred-id.py` | every category: `id`, `name`, `parent_id` | ~5,200 | ~90 min |
+| `get-fred-series.py` | every series: title, frequency, units, seasonality, coverage | ~5,500 | ~90 min |
 
-- resolve a category id from an API response to a readable name without a
-  round trip, which matters when you are processing thousands of rows;
-- find the category id to pass to `fred/category/series`, instead of walking
-  down from the root with one request per level every time you search;
-- build a browsable tree, autocomplete or facet filter over FRED, none of
-  which can assemble the hierarchy live at 120 requests per minute;
-- hand an LLM agent the whole list up front rather than have it spend its
-  context discovering the tree.
-
-Note that this is category metadata, not data: no series, no observations.
-
-The generated file is what
-[FRED-OpenAPI-specification](https://github.com/armanobosyan/FRED-OpenAPI-specification)
-publishes as its category listing.
+Times are at the default 60 requests per minute; FRED permits 120, which
+halves them. Both crawls resume after an interruption, so neither has to be
+done in one sitting.
 
 ## Install
 
@@ -35,106 +26,143 @@ publishes as its category listing.
 pip install -r requirements.txt
 ```
 
-Requires Python 3.8+, `requests` and `tqdm`.
-
-## Usage
-
-Get a free API key at <https://fredaccount.stlouisfed.org/apikeys>, then:
+Requires Python 3.8+, `requests` and `tqdm`. Get a free API key at
+<https://fredaccount.stlouisfed.org/apikeys>, then:
 
 ```sh
 export FRED_API_KEY=your_key_here      # Windows: set FRED_API_KEY=your_key_here
-python get-fred-id.py
 ```
 
 The key is never read from or written to the source. Pass `--api-key` instead
 of the environment variable if you prefer.
 
-To try it out without waiting for the full tree, crawl a single subtree:
+## Categories
 
 ```sh
-python get-fred-id.py --root 33060     # "Academic Data", 65 categories, ~40s
+python get-fred-id.py                  # whole tree, about 90 minutes
+python get-fred-id.py --root 33060     # one subtree, about 40 seconds
 ```
 
-Progress is reported per level, with a bar showing the categories being
-expanded:
+Walks `fred/category/children` breadth first from the root. Cost is lopsided:
+a level costs one request per category of the level above it, so about three
+quarters of the run goes on the fifth level, which yields 25 categories for
+some 3,900 requests.
 
+The tree is currently 9 levels deep and holds **5,189 categories**. Output is
+one CSV per depth in `saved_categories/`, plus a combined
+`fred-ID-parentID-Names.csv` sorted by `parent_id` then `id`:
+
+```csv
+id,name,parent_id
+1,Production & Business Activity,0
+10,"Population, Employment, & Labor Markets",0
 ```
-level 0: expanding 1 categories
-level 1: expanding 8 categories
-level 2: expanding 73 categories
-level 3: expanding 632 categories
-...
-wrote 5189 categories to fred-ID-parentID-Names.csv
-done: 5189 categories, 5190 requests, 53.9 min
+
+This combined file is what the series crawler reads, and what
+[FRED-OpenAPI-specification](https://github.com/armanobosyan/FRED-OpenAPI-specification)
+publishes as its category listing.
+
+## Series
+
+Run the category crawler first — this one needs its output to know which
+categories exist.
+
+```sh
+python get-fred-series.py                  # everything, about 90 minutes
+python get-fred-series.py --root 32991     # one branch, minutes
+python get-fred-series.py --format sqlite  # one queryable file instead of two CSVs
+python get-fred-series.py --with-notes     # include the prose descriptions
 ```
 
-The exit code is `0` on success, `1` on a failure the run could not recover
-from, `2` on a bad command line, and `130` after Ctrl-C.
+Pages through `fred/category/series` for every category. Series belong to more
+than one category, so the output is normalised rather than repeated:
+`series.csv` holds each series once, `series-categories.csv` holds the
+pairings.
 
-### Options
+| Output | Rows | Size |
+| --- | --- | --- |
+| `series.csv` | over 800,000 | ~200 MB, or ~540 MB with `--with-notes` |
+| `series-categories.csv` | ~1.05 million pairings | ~25 MB |
+| `fred-series.sqlite` | both tables | ~300 MB |
+
+`notes` holds each series' prose description and nearly triples the download,
+which is why it is opt-in.
+
+With `--format sqlite` the database deduplicates as it goes and the result is
+queryable straight away:
+
+```sql
+SELECT id, title, frequency FROM series
+  JOIN series_categories ON series_id = id
+ WHERE category_id = 125 AND frequency = 'Monthly';
+```
+
+Unlike the category tree, which changed by seven rows in two years, series
+metadata moves constantly — FRED touches tens of thousands of series a day, and
+`last_updated`, `observation_end` and `popularity` change with them. Treat any
+copy as a snapshot and refresh it when the freshness matters to you.
+
+## Options
+
+Both scripts share these, though `--root` means "start here" to one and
+"only this branch" to the other.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
 | `--api-key` | `$FRED_API_KEY` | API key |
-| `--out` | `saved_categories/` | directory for the per-level CSVs |
-| `--combined` | `fred-ID-parentID-Names.csv` | combined CSV of every category |
-| `--no-combined` | off | skip the combined CSV |
-| `--root` | `0` | category to start from |
 | `--rate` | `60` | requests per minute (FRED permits 120) |
-| `--max-depth` | `12` | stop after this many levels |
 | `--timeout` | `30` | per-request timeout in seconds |
-| `--refresh` | off | delete existing CSVs and checkpoints, start over |
+| `--refresh` | off | delete existing output and checkpoints, start over |
+| `--root` | whole tree | category to start from, for a quick trial run |
 
-## Output
+`get-fred-id.py` adds `--out`, `--combined`, `--no-combined` and `--max-depth`.
+`get-fred-series.py` adds `--categories`, `--out`, `--format` and
+`--with-notes`. Run either with `--help` for the details.
 
-`saved_categories/fetched_level_N.csv` holds the categories found at depth `N`,
-and `fred-ID-parentID-Names.csv` holds all of them, sorted by `parent_id` then
-`id`. Both use the columns `id,name,parent_id`.
-
-```csv
-id,name,parent_id
-32991,"Money, Banking, & Finance",0
-10,"Population, Employment, & Labor Markets",0
-```
-
-The tree is currently 9 levels deep and holds about 5,200 categories. The
-combined file is written with a UTF-8 BOM so that Excel reads names such as
-`Côte d'Ivoire` correctly rather than corrupting them on save.
+The exit code is `0` on success, `1` on a failure the run could not recover
+from, `2` on a bad command line, and `130` after Ctrl-C.
 
 ## Resuming
 
-Every request is checkpointed to `saved_categories/.progress_level_N.jsonl`
-as it completes, so an interrupted run continues where it stopped rather than
-repeating the level. This matters: the fifth level alone costs about 3,900
-requests, since a level costs one request per category of the level above it.
+Neither crawler repeats work it has already done. The category crawler
+checkpoints after every request; the series crawler writes its rows to disk and
+records the category as it finishes each one, since holding 800,000 series in
+memory is not an option.
 
-Interrupt with Ctrl-C and rerun the same command to resume. Levels already
-written as CSV are reused as-is; use `--refresh` to discard everything and
-crawl from scratch. Checkpoint files are removed automatically once their
-level completes, and a resumed run produces byte-identical output to an
-uninterrupted one.
+Interrupt with Ctrl-C and rerun the same command to resume. A resumed run
+produces byte-identical output to an uninterrupted one — both crawlers are
+tested for that. Use `--refresh` to discard everything and start again.
 
 ## Rate limits and errors
 
-FRED permits 120 requests per minute for a registered key and answers with
-HTTP 429 above that. The script paces itself to `--rate` requests per minute,
-honours `Retry-After` on 429, and retries connection failures and 5xx
-responses with exponential backoff.
+FRED permits 120 requests per minute for a registered key and answers with HTTP
+429 above that. Both scripts pace themselves to `--rate`, honour `Retry-After`
+on 429, and retry connection failures and 5xx responses with exponential
+backoff.
 
-Failures are not silently swallowed: a rejected API key aborts the run
-immediately, and categories FRED reports as nonexistent are logged as skipped.
-An empty result is only ever reported when FRED genuinely returns no children.
+Failures are not silently swallowed. A rejected API key aborts the run
+immediately; categories FRED reports as nonexistent are logged and skipped. An
+empty result is only ever reported when FRED genuinely returns nothing.
+
+## Layout
+
+| File | Purpose |
+| --- | --- |
+| `get-fred-id.py` | category crawler |
+| `get-fred-series.py` | series crawler |
+| `fredapi.py` | shared client: pacing, retries, error taxonomy, CSV helpers |
 
 ## Background
 
 The Federal Reserve Bank of St. Louis distributed CSV files of series
-descriptions until May 2020, when it stopped. JD Long wrote a script that
-reconstructed the equivalent listing by walking FRED's parent/child category
-tree, building on earlier work by Eric Bickel; it depended on the `fredr`
-package, which has since been archived on CRAN.
+descriptions until 2020. JD Long wrote a script that reconstructed the
+equivalent listing by walking FRED's parent/child category tree, building on
+earlier work by Eric Bickel; it depended on the `fredr` package, which has
+since been archived on CRAN.
 
-This is a Python port of that approach, without the R dependency, and adds the
-rate limiting and resume behaviour that a crawl of this length needs.
+This began as a Python port of that approach without the R dependency, and
+adds the pacing, error handling and resume behaviour that crawls of this length
+need, plus the series metadata the original CSVs carried.
 
 ## License
 
