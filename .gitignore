@@ -26,3 +26,6 @@ env/
 
 # Resume checkpoints, deleted automatically once a level completes
 saved_categories/.progress_level_*.jsonl
+
+# Series metadata: hundreds of megabytes, regenerate it rather than commit it
+saved_series/
