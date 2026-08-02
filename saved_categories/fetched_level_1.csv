@@ -59,14 +59,16 @@ id,name,parent_id
 33833,"Banking and Monetary Statistics, 1914-1941",33060
 33951,"Daily Federal Funds Rate, 1928-54",33060
 33825,Data on the nominal term structure model from Kim and Wright,33060
-33891,Historical Federal Reserve Data,33060
-33061,NBER Macrohistory Database,33060
-33100,Penn World Table 7.1,33060
-33402,Penn World Table 9.0,33060
-33120,Recession Probabilities,33060
-33123,"Weekly U.S. and State Bond Prices, 1855-1865",33060
 33201,Economic Policy Uncertainty,33060
-33442,Sticky Wages and Comovement,33060
+33891,Historical Federal Reserve Data,33060
 33839,A Millennium of Macroeconomic Data for the UK,33060
+33061,NBER Macrohistory Database,33060
 33934,"New England Textile Industry, 1815-1860",33060
+33100,Penn World Table 7.1,33060
+33402,Penn World Table 11.0,33060
+8,Real-Time Population Survey,33060
+33120,Recession Probabilities,33060
+33442,Sticky Wages and Comovement,33060
 34000,"The Effects of the 1930s HOLC ""Redlining"" Maps",33060
+34309,U.S. Survey of Working Arrangements and Attitudes,33060
+33123,"Weekly U.S. and State Bond Prices, 1855-1865",33060

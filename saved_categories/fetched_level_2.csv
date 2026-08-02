@@ -14,6 +14,7 @@ id,name,parent_id
 33446,Interest Rate Spreads,22
 32299,Interest Rate Swaps,22
 32995,Long-Term Securities,22
+34242,Monetary Policy,22
 33055,Money Market Accounts,22
 114,Mortgage Rates,22
 33057,Personal Loan Rates,22
@@ -41,7 +42,7 @@ id,name,parent_id
 32215,Factors Affecting Reserve Balances,24
 32218,"Securities, Loans, & Other Assets & Liabilities Held by Fed",24
 32414,Bond Market Indexes,46
-33119,Consumer Financial Condition Indexes,46
+33119,Consumer Financial Conditions,46
 32457,Financial Activity Measures,46
 32255,Stock Market Indexes,46
 32425,Volatility Indexes,46
@@ -169,6 +170,7 @@ id,name,parent_id
 3000,Income Payments & Receipts,13
 33705,International Investment Position,13
 125,Trade Balance,13
+7,Treasury International Capital (TIC),13
 127,U.S. International Finance,13
 33957,Consumer Expenditures,33955
 32300,Housing Units Authorized by Building Permits,97
@@ -290,6 +292,7 @@ id,name,parent_id
 32716,Guadeloupe,32264
 32717,Guam,32264
 32718,Guatemala,32264
+32719,Guernsey,32264
 32720,Guinea,32264
 32721,Guinea-Bissau,32264
 32722,Guyana,32264
@@ -310,6 +313,7 @@ id,name,parent_id
 32274,Italy,32264
 32731,Jamaica,32264
 32281,Japan,32264
+32732,Jersey,32264
 32733,Jordan,32264
 32734,Kazakhstan,32264
 32735,Kenya,32264
@@ -580,6 +584,13 @@ id,name,parent_id
 32238,West,32233
 33835,Section 1. General Statistics of All Banks in the United States,33833
 33837,Section 2. Assets and Liabilities of All Member Banks,33833
+33845,National Accounts,33839
+33843,"Labour, Capital and Productivity",33839
+33847,Wages and Prices,33839
+33849,Financial Markets,33839
+33851,Money and Credit,33839
+33853,Fiscal,33839
+33855,Trade,33839
 33062,Production of Commodities,33061
 33063,Construction,33061
 33064,Transportation and Public Utilities,33061
@@ -620,10 +631,3 @@ id,name,parent_id
 33406,Exchange Rates and GDP Price Levels,33402
 33407,Shares in Output-side Real GDP at Current Purchasing Power Parities,33402
 33408,"Price Levels, Expenditure Categories and Capital",33402
-33845,National Accounts,33839
-33843,"Labour, Capital and Productivity",33839
-33847,Wages and Prices,33839
-33849,Financial Markets,33839
-33851,Money and Credit,33839
-33853,Fiscal,33839
-33855,Trade,33839
