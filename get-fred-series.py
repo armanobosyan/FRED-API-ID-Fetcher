@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """Fetch the metadata of every FRED series, category by category.
 
-FRED publishes over 800,000 series but has no endpoint that lists them.
-fred/category/series returns the series filed under one category, so this walks
-the category tree produced by get-fred-id.py and pages through each one:
-roughly 5,500 requests, about 90 minutes at the default pace.
+FRED publishes hundreds of thousands of series but has no endpoint that lists
+them. fred/category/series returns the series filed under one category, so this
+walks the category tree produced by get-fred-id.py and pages through each one.
+A full run measured 845,501 series over 5,582 requests in 86 minutes; a page of
+1,000 series is most of a megabyte, so the crawl is bound by transfer rather
+than by the rate limit and raising --rate does little.
 
 Run get-fred-id.py first; this script reads its combined CSV to know which
 categories exist.
 
-Series belong to several categories at once -- about 1.05 million pairings for
-830,000 distinct series -- so the output is normalised into the series
-themselves and the pairings between them and categories.
+Series belong to several categories at once -- 1,043,049 pairings for those
+845,501 series -- so the output is normalised into the series themselves and
+the pairings between them and categories.
 
     export FRED_API_KEY=...
     python get-fred-series.py                  # everything, about 90 minutes

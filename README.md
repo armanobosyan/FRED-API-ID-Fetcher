@@ -13,12 +13,17 @@ which is what these scripts do.
 
 | Script | Fetches | Requests | Time |
 | --- | --- | --- | --- |
-| `get-fred-id.py` | every category: `id`, `name`, `parent_id` | ~5,200 | ~90 min |
-| `get-fred-series.py` | every series: title, frequency, units, seasonality, coverage | ~5,500 | ~90 min |
+| `get-fred-id.py` | 5,189 categories: `id`, `name`, `parent_id` | 5,190 | 90 min, or 55 at `--rate 100` |
+| `get-fred-series.py` | 845,501 series: title, frequency, units, seasonality, coverage | 5,582 | 85 min |
 
-Times are at the default 60 requests per minute; FRED permits 120, which
-halves them. Both crawls resume after an interruption, so neither has to be
-done in one sitting.
+Those are measured, not estimated. Raising `--rate` speeds the category crawl
+up, because its replies are tiny and it really is waiting on the limiter. It
+barely helps the series crawl: a page of 1,000 series is most of a megabyte, so
+that one spends its time on the wire and settles at about 65 requests a minute
+whatever you ask for.
+
+Both crawls resume after an interruption, so neither has to be done in one
+sitting.
 
 ## Install
 
@@ -81,9 +86,12 @@ pairings.
 
 | Output | Rows | Size |
 | --- | --- | --- |
-| `series.csv` | over 800,000 | ~200 MB, or ~540 MB with `--with-notes` |
-| `series-categories.csv` | ~1.05 million pairings | ~25 MB |
+| `series.csv` | 845,501 series | 194 MB, or ~540 MB with `--with-notes` |
+| `series-categories.csv` | 1,043,049 pairings | 24 MB |
 | `fred-series.sqlite` | both tables | ~300 MB |
+
+Series average 1.23 categories each, and 4,903 of the 5,189 categories hold
+any series at all; the rest are branches of the tree.
 
 `notes` holds each series' prose description and nearly triples the download,
 which is why it is opt-in.
