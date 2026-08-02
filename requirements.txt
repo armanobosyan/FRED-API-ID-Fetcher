@@ -1,8 +1,2 @@
-# install the following packages
-requests
-pandas
-ratelimit
-limits
-sleep_and_retry
-tqdm 
-
+requests>=2.25
+tqdm>=4.60

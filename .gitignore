@@ -19,3 +19,10 @@ Thumbs.db
 # Virtual environment
 venv/
 env/
+.venv/
+
+# API key
+.env
+
+# Resume checkpoints, deleted automatically once a level completes
+saved_categories/.progress_level_*.jsonl

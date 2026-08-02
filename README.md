@@ -1,71 +1,141 @@
-# FRED API ID Data Fetcher
-This Python script is designed to interact with the Federal Reserve Economic Data (FRED) API to fetch, save, and manage economic data categories. Here's a breakdown of its functionality:
+# FRED API ID Fetcher
 
-## Libraries Used
-requests: For making HTTP requests to the FRED API.
-pandas: For data manipulation and saving the fetched data as CSV files.
-ratelimit: To apply rate limiting on API requests, preventing overuse.
-tqdm: Provides a progress bar for loops, enhancing user experience during data fetching.
-os: For file and directory operations, ensuring compatibility across operating systems.
+Downloads the complete category tree of the [Federal Reserve Economic Data
+(FRED) API](https://fred.stlouisfed.org/docs/api/fred/) and saves it as CSV.
 
-## Key Components
-FRED API Key and Save Path
-FRED_KEY: Placeholder for the user's FRED API key, necessary for authentication.
-SAVE_PATH: The directory path where fetched category data will be saved, dynamically set to a folder named saved_categories in the current working directory.
+FRED organises its ~800,000 time series under a tree of categories, but offers
+no endpoint that returns the tree in one call — only
+`fred/category/children`, which lists the direct children of a single
+category. This script walks that endpoint breadth first until the whole tree
+has been visited: about **5,200 requests**, roughly **90 minutes** at the
+default pace of 60 requests per minute, or **45** at `--rate 120`, the most
+FRED allows.
 
-## Functions
-api_url(category_id, api_key=None): Constructs the URL for API requests based on the category ID and optionally provided API key.
+The result is the `id`, `name` and `parent_id` of every FRED category, which is
+what you need to:
 
-import_category_children(category_id, api_key=None): Fetches data for child categories of a given category ID from the FRED API. It uses rate limiting to ensure compliance with API usage policies. The data is returned as a pandas DataFrame, with any 'notes' column removed for cleanliness.
+- resolve a category id from an API response to a readable name without a
+  round trip, which matters when you are processing thousands of rows;
+- find the category id to pass to `fred/category/series`, instead of walking
+  down from the root with one request per level every time you search;
+- build a browsable tree, autocomplete or facet filter over FRED, none of
+  which can assemble the hierarchy live at 120 requests per minute;
+- hand an LLM agent the whole list up front rather than have it spend its
+  context discovering the tree.
 
-save_df_to_file(df, filename): Saves a given DataFrame to a CSV file within the SAVE_PATH directory, creating the directory if it doesn't exist.
+Note that this is category metadata, not data: no series, no observations.
 
-read_df_from_file(filename): Attempts to read a DataFrame from a specified CSV file within the SAVE_PATH directory, facilitating data persistence and resume capability.
+The generated file is what
+[FRED-OpenAPI-specification](https://github.com/armanobosyan/FRED-OpenAPI-specification)
+publishes as its category listing.
 
-fetch_and_save_categories(needed_categories): Orchestrates the fetching process for categories, leveraging the tqdm library for progress visualization. It checks for existing data to resume where left off, fetches data for necessary categories, and saves the results incrementally. This function iterates through a predefined depth (10 levels deep in this case) or until no more categories are needed to be fetched.
+## Install
 
-## Execution Flow
-Initialization: Sets up the FRED API key and the save path.
-Data Fetching: Begins fetching category data starting with the root category (ID 0). It utilizes a loop to fetch data for each level of categories, checking for existing files to resume from if interrupted.
-Saving and Resuming: After fetching, data is saved to CSV files, allowing the process to be paused and resumed without loss of progress.
-Completion: Once all categories have been fetched and saved, the script prints a completion message.
+```sh
+pip install -r requirements.txt
+```
 
-## Use Case
-This script is particularly useful for users needing comprehensive economic data from FRED for analysis, research, or educational purposes. It automates the process of data collection, respects API rate limits, and provides a user-friendly way to manage large datasets.
+Requires Python 3.8+, `requests` and `tqdm`.
 
-## Features
-- Fetches data from the FRED API.
-- Rate limiting to comply with API constraints.
-- Resume capability to pick up where left off.
-- Saves data in CSV format.
+## Usage
 
-# Getting Started
+Get a free API key at <https://fredaccount.stlouisfed.org/apikeys>, then:
 
-About the Federal Reserve Economic Data (FRED) API, offered by the Federal Reserve Bank of St. Louis, is a comprehensive source of economic data. It provides free access to over 765,000 time series from various national and international sources, covering a wide array of economic indicators such as GDP, inflation rates, employment figures, and more. Here's a succinct overview:
+```sh
+export FRED_API_KEY=your_key_here      # Windows: set FRED_API_KEY=your_key_here
+python get-fred-id.py
+```
 
-### Key Features
-Extensive Data Collection: Access a vast array of U.S. and international economic data.
-Regular Updates: Data series are updated regularly, ensuring access to the latest information.
-Flexible Formats: Supports JSON, XML, and plain text formats for easy integration.
-Free Access: Available at no cost, requiring an API key for usage.
-### Usage
-Economic Analysis: Ideal for researchers, analysts, and students for economic studies and forecasting.
-Financial Applications: Used by financial professionals for market analysis and investment planning.
-Data Visualization: Enables journalists and bloggers to create compelling economic visualizations.
-### API Key Getting Started
-API Key: Register on the FRED website to obtain an API key.
-Documentation: Review the API guide for detailed usage instructions.
-Query Data: Use the API to request specific data series with your API key.
+The key is never read from or written to the source. Pass `--api-key` instead
+of the environment variable if you prefer.
 
-# Conclusion
-The FRED API is a powerful tool for accessing a wide range of economic data, supporting various research, analysis, and educational needs.
-For detailed information, visit the FRED API documentation.
+To try it out without waiting for the full tree, crawl a single subtree:
 
-# HYSTORY: This Python is fork of orignal based posted by joshuaulrich/freddy-mcfredface 
-This repository and its contents are inspired by the work of JD Long and further developed by Eric Bickel. Originally, Eric aimed to download CSV files containing series descriptions provided by FRED. However, since May 2000, FRED has ceased the distribution of these CSV files directly.
+```sh
+python get-fred-id.py --root 33060     # "Academic Data", 65 categories, ~40s
+```
 
-JD Long crafted a script capable of navigating through FRED's extensive network of parent/child categories to compile a comprehensive list of all FRED series available. This script was notably reliant on the fredr package, a tool that has been archived on CRAN in the time since. In continuation of JD's effort, I have adapted his script into Python, eliminating the dependency on fredr and addressing the challenge posed by FRED's discontinuation of direct CSV distribution.
+Progress is reported per level, with a bar showing the categories being
+expanded:
 
-The Python script is designed to fetch and save category data from the FRED API, incorporating features such as built-in rate limiting and the ability to resume interrupted sessions. This ensures efficient and reliable data fetching without exceeding API limits, making extensive data collection sessions manageable.
+```
+level 0: expanding 1 categories
+level 1: expanding 8 categories
+level 2: expanding 73 categories
+level 3: expanding 632 categories
+...
+wrote 5189 categories to fred-ID-parentID-Names.csv
+done: 5189 categories, 5190 requests, 53.9 min
+```
 
+The exit code is `0` on success, `1` on a failure the run could not recover
+from, `2` on a bad command line, and `130` after Ctrl-C.
 
+### Options
+
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `--api-key` | `$FRED_API_KEY` | API key |
+| `--out` | `saved_categories/` | directory for the per-level CSVs |
+| `--combined` | `fred-ID-parentID-Names.csv` | combined CSV of every category |
+| `--no-combined` | off | skip the combined CSV |
+| `--root` | `0` | category to start from |
+| `--rate` | `60` | requests per minute (FRED permits 120) |
+| `--max-depth` | `12` | stop after this many levels |
+| `--timeout` | `30` | per-request timeout in seconds |
+| `--refresh` | off | delete existing CSVs and checkpoints, start over |
+
+## Output
+
+`saved_categories/fetched_level_N.csv` holds the categories found at depth `N`,
+and `fred-ID-parentID-Names.csv` holds all of them, sorted by `parent_id` then
+`id`. Both use the columns `id,name,parent_id`.
+
+```csv
+id,name,parent_id
+32991,"Money, Banking, & Finance",0
+10,"Population, Employment, & Labor Markets",0
+```
+
+The tree is currently 9 levels deep and holds about 5,200 categories. The
+combined file is written with a UTF-8 BOM so that Excel reads names such as
+`Côte d'Ivoire` correctly rather than corrupting them on save.
+
+## Resuming
+
+Every request is checkpointed to `saved_categories/.progress_level_N.jsonl`
+as it completes, so an interrupted run continues where it stopped rather than
+repeating the level. This matters: the fifth level alone costs about 3,900
+requests, since a level costs one request per category of the level above it.
+
+Interrupt with Ctrl-C and rerun the same command to resume. Levels already
+written as CSV are reused as-is; use `--refresh` to discard everything and
+crawl from scratch. Checkpoint files are removed automatically once their
+level completes, and a resumed run produces byte-identical output to an
+uninterrupted one.
+
+## Rate limits and errors
+
+FRED permits 120 requests per minute for a registered key and answers with
+HTTP 429 above that. The script paces itself to `--rate` requests per minute,
+honours `Retry-After` on 429, and retries connection failures and 5xx
+responses with exponential backoff.
+
+Failures are not silently swallowed: a rejected API key aborts the run
+immediately, and categories FRED reports as nonexistent are logged as skipped.
+An empty result is only ever reported when FRED genuinely returns no children.
+
+## Background
+
+The Federal Reserve Bank of St. Louis distributed CSV files of series
+descriptions until May 2020, when it stopped. JD Long wrote a script that
+reconstructed the equivalent listing by walking FRED's parent/child category
+tree, building on earlier work by Eric Bickel; it depended on the `fredr`
+package, which has since been archived on CRAN.
+
+This is a Python port of that approach, without the R dependency, and adds the
+rate limiting and resume behaviour that a crawl of this length needs.
+
+## License
+
+See [LICENSE](LICENSE).
